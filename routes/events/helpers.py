@@ -33,12 +33,13 @@ def check_withdrawal_streak(conn, alert_flag, alert_codes, event_request_data):
     table_name = "user_actions"
     foreign_key_column = "user_id"
     timestamp_column = "timestamp"
+    type_column = "type"
     user_id = event_request_data["user_id"]
     withdrawal_key = "withdraw"
     withdrawal_streak_count_max = 3
     withdrawal_streak_alert_code = 30
     # Get the last 3 user actions
-    query = (f"SELECT * "
+    query = (f"SELECT {schema_name}.{table_name}.{type_column} "
              f"FROM {schema_name}.{table_name} "
              f"WHERE "
              f"{schema_name}.{table_name}.{foreign_key_column} = %s "
@@ -58,6 +59,32 @@ def check_withdrawal_streak(conn, alert_flag, alert_codes, event_request_data):
 
 
 def check_deposit_growth(conn, alert_flag, alert_codes, event_request_data):
+    schema_name = "public"
+    table_name = "user_actions"
+    foreign_key_column = "user_id"
+    type_column = "type"
+    amount_column = "amount"
+    timestamp_column = "timestamp"
+    deposit_key = "deposit"
+    growth_count = 3
+    growth_alert_code = 300
+    # Query to fetch the last 3 deposits for the user
+    query = (f"SELECT {schema_name}.{table_name}.{amount_column} "
+             f"FROM {schema_name}.{table_name} "
+             f"WHERE "
+             f"{schema_name}.{table_name}.{foreign_key_column} = %s AND "
+             f"{schema_name}.{table_name}.{type_column} = %s "
+             f"ORDER BY {schema_name}.{table_name}.{timestamp_column} DESC "
+             f"LIMIT {growth_count}")
+    values = [event_request_data["user_id"], deposit_key]
+    user_actions = basic_lookup(conn, query, values=values)
+    # Return early if fewer than 3 deposits exist
+    if len(user_actions) < growth_count:
+        return alert_flag, alert_codes
+    # Check if each deposit is larger than the previous one
+    if all(user_actions[count]["amount"] > user_actions[count + 1]["amount"] for count in range(len(user_actions) - 1)):
+        alert_flag = True
+        alert_codes.append(growth_alert_code)
     return alert_flag, alert_codes
 
 
