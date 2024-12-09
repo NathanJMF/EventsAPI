@@ -19,19 +19,19 @@ def validate_amount(current_amount):
         raise ValueError("The amount must be a positive number with exactly two decimal places (e.g., '42.00').")
 
 
-def check_single_large_withdrawal(conn, alert_flag, alert_codes, event_request_data):
+def check_large_withdrawal(conn, alert_flag, alert_codes, event_request_data):
     return alert_flag, alert_codes
 
 
-def check_three_consecutive_withdrawals(conn, alert_flag, alert_codes, event_request_data):
+def check_withdrawal_streak(conn, alert_flag, alert_codes, event_request_data):
     return alert_flag, alert_codes
 
 
-def check_three_consecutive_larger_deposits(conn, alert_flag, alert_codes, event_request_data):
+def check_deposit_growth(conn, alert_flag, alert_codes, event_request_data):
     return alert_flag, alert_codes
 
 
-def check_deposit_limit_exceeded_in_window(conn, alert_flag, alert_codes, event_request_data):
+def check_deposit_limit(conn, alert_flag, alert_codes, event_request_data):
     return alert_flag, alert_codes
 
 
@@ -42,11 +42,11 @@ def check_event_request_alerts(conn, event_request_data):
     # Assumes that type will be "deposit" if it is not "withdraw" as request parser ensures correctness.
     # Function is less reusable because of this decision
     if event_request_data["type"] == withdraw_event_key:
-        alert_flag, alert_codes = check_single_large_withdrawal(conn, alert_flag, alert_codes, event_request_data)
-        alert_flag, alert_codes = check_three_consecutive_withdrawals(conn, alert_flag, alert_codes, event_request_data)
+        alert_flag, alert_codes = check_large_withdrawal(conn, alert_flag, alert_codes, event_request_data)
+        alert_flag, alert_codes = check_withdrawal_streak(conn, alert_flag, alert_codes, event_request_data)
     else:
-        alert_flag, alert_codes = check_three_consecutive_larger_deposits(conn, alert_flag, alert_codes, event_request_data)
-        alert_flag, alert_codes = check_deposit_limit_exceeded_in_window(conn, alert_flag, alert_codes, event_request_data)
+        alert_flag, alert_codes = check_deposit_growth(conn, alert_flag, alert_codes, event_request_data)
+        alert_flag, alert_codes = check_deposit_limit(conn, alert_flag, alert_codes, event_request_data)
     return alert_flag, alert_codes
 
 
