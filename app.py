@@ -1,7 +1,7 @@
 from flask import Flask
 from flask_restful import Api
 from config_loader import Config
-from routes.Events.resources import EventsResource
+from routes.events.resources import EventsResource
 
 
 app = Flask(__name__)
