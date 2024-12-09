@@ -1,3 +1,6 @@
+from database_system.core import basic_lookup
+
+
 def validate_amount(current_amount):
     try:
         # Convert to float first to ensure it's a valid number
@@ -16,32 +19,52 @@ def validate_amount(current_amount):
         raise ValueError("The amount must be a positive number with exactly two decimal places (e.g., '42.00').")
 
 
-def check_single_large_withdrawal(alert_flag, alert_codes, event_request_data):
+def check_single_large_withdrawal(conn, alert_flag, alert_codes, event_request_data):
     return alert_flag, alert_codes
 
 
-def check_three_consecutive_withdrawals(alert_flag, alert_codes, event_request_data):
+def check_three_consecutive_withdrawals(conn, alert_flag, alert_codes, event_request_data):
     return alert_flag, alert_codes
 
 
-def check_three_consecutive_larger_deposits(alert_flag, alert_codes, event_request_data):
+def check_three_consecutive_larger_deposits(conn, alert_flag, alert_codes, event_request_data):
     return alert_flag, alert_codes
 
 
-def check_deposit_limit_exceeded_in_window(alert_flag, alert_codes, event_request_data):
+def check_deposit_limit_exceeded_in_window(conn, alert_flag, alert_codes, event_request_data):
     return alert_flag, alert_codes
 
 
-def check_event_request_alerts(event_request_data):
+def check_event_request_alerts(conn, event_request_data):
     withdraw_event_key = "withdraw"
     alert_flag = False
     alert_codes = []
     # Assumes that type will be "deposit" if it is not "withdraw" as request parser ensures correctness.
     # Function is less reusable because of this decision
     if event_request_data["type"] == withdraw_event_key:
-        alert_flag, alert_codes = check_single_large_withdrawal(alert_flag, alert_codes, event_request_data)
-        alert_flag, alert_codes = check_three_consecutive_withdrawals(alert_flag, alert_codes, event_request_data)
+        alert_flag, alert_codes = check_single_large_withdrawal(conn, alert_flag, alert_codes, event_request_data)
+        alert_flag, alert_codes = check_three_consecutive_withdrawals(conn, alert_flag, alert_codes, event_request_data)
     else:
-        alert_flag, alert_codes = check_three_consecutive_larger_deposits(alert_flag, alert_codes, event_request_data)
-        alert_flag, alert_codes = check_deposit_limit_exceeded_in_window(alert_flag, alert_codes, event_request_data)
+        alert_flag, alert_codes = check_three_consecutive_larger_deposits(conn, alert_flag, alert_codes, event_request_data)
+        alert_flag, alert_codes = check_deposit_limit_exceeded_in_window(conn, alert_flag, alert_codes, event_request_data)
     return alert_flag, alert_codes
+
+
+def check_user_exists(conn, user_id):
+    current_user_result = get_user_by_id(conn, user_id)
+    if current_user_result:
+        return True
+    return False
+
+
+def get_user_by_id(conn, user_id):
+    current_schema = "public"
+    current_table = "users"
+    primary_key_column = "user_id"
+    query = (f"SELECT * "
+             f"FROM {current_schema}.{current_table} "
+             f"WHERE "
+             f"{current_schema}.{current_table}.{primary_key_column} = %s")
+    values = [user_id,]
+    result = basic_lookup(conn, query, values=values)
+    return result
