@@ -89,6 +89,39 @@ def check_deposit_growth(conn, alert_flag, alert_codes, event_request_data):
 
 
 def check_deposit_limit(conn, alert_flag, alert_codes, event_request_data):
+    schema_name = "public"
+    table_name = "user_actions"
+    foreign_key_column = "user_id"
+    type_column = "type"
+    amount_column = "amount"
+    timestamp_column = "timestamp"
+    deposit_key = "deposit"
+    deposit_limit = 200
+    deposit_limit_alert_code = 123
+    time_window = 30
+
+    current_time = event_request_data["time"]
+    # Query to fetch deposits within the 30-second time window
+    query = (f"SELECT {schema_name}.{table_name}.{amount_column} "
+             f"FROM {schema_name}.{table_name} "
+             f"WHERE "
+             f"{schema_name}.{table_name}.{foreign_key_column} = %s AND "
+             f"{schema_name}.{table_name}.{type_column} = %s AND "
+             f"{schema_name}.{table_name}.{timestamp_column} >= %s AND "
+             f"{schema_name}.{table_name}.{timestamp_column} <= %s")
+    values = [
+        event_request_data["user_id"],
+        deposit_key,
+        current_time - time_window,
+        current_time
+    ]
+    deposits = basic_lookup(conn, query, values=values)
+    # Calculate the total amount of deposits in the time window
+    total_deposit = sum(deposit["amount"] for deposit in deposits)
+    # Trigger alert if the total exceeds the deposit limit
+    if total_deposit > deposit_limit:
+        alert_flag = True
+        alert_codes.append(deposit_limit_alert_code)
     return alert_flag, alert_codes
 
 
