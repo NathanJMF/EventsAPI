@@ -1,4 +1,4 @@
-from database_system.core import basic_lookup
+from database_system.core import basic_lookup, basic_write_dict
 
 
 def validate_amount(current_amount):
@@ -73,3 +73,24 @@ def get_user_by_id(conn, user_id):
     values = [user_id,]
     result = basic_lookup(conn, query, values=values)
     return result
+
+
+def write_user_action(conn, user_id, action_type, amount, timestamp):
+    schema_name = "public"
+    table_name = "user_actions"
+    primary_key_column = "action_id"
+    data_dict = {
+        "user_id": user_id,
+        "type": action_type,
+        "amount": amount,
+        "timestamp": timestamp,
+    }
+    new_entry_id = basic_write_dict(
+        conn,
+        schema_name,
+        table_name,
+        data_dict,
+        primary_key_column=primary_key_column,
+        return_id=True
+    )
+    return new_entry_id
