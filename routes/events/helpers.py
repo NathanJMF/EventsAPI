@@ -29,6 +29,31 @@ def check_large_withdrawal(alert_flag, alert_codes, event_request_data):
 
 
 def check_withdrawal_streak(conn, alert_flag, alert_codes, event_request_data):
+    schema_name = "public"
+    table_name = "user_actions"
+    foreign_key_column = "user_id"
+    timestamp_column = "timestamp"
+    user_id = event_request_data["user_id"]
+    withdrawal_key = "withdraw"
+    withdrawal_streak_count_max = 3
+    withdrawal_streak_alert_code = 30
+    # Get the last 3 user actions
+    query = (f"SELECT * "
+             f"FROM {schema_name}.{table_name} "
+             f"WHERE "
+             f"{schema_name}.{table_name}.{foreign_key_column} = %s "
+             f"ORDER BY {schema_name}.{table_name}.{timestamp_column} DESC "
+             f"LIMIT {withdrawal_streak_count_max}")
+    values = [user_id,]
+    user_actions = basic_lookup(conn, query, values=values)
+    # Leaves if there are less than 3 user actions
+    if len(user_actions) < withdrawal_streak_count_max:
+        return alert_flag, alert_codes
+    # Uses list comprehension to quickly check if the last 3 actions are withdrawals
+    if all(current_action["type"] == withdrawal_key for current_action in user_actions):
+        alert_flag = True
+        alert_codes.append(withdrawal_streak_alert_code)
+
     return alert_flag, alert_codes
 
 
