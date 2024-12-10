@@ -137,6 +137,9 @@ def check_event_request_alerts(conn, event_request_data):
     else:
         alert_flag, alert_codes = check_deposit_growth(conn, alert_flag, alert_codes, event_request_data)
         alert_flag, alert_codes = check_deposit_limit(conn, alert_flag, alert_codes, event_request_data)
+    # Log alerts to the database if any are triggered
+    for alert_code in alert_codes:
+        write_alert(conn, event_request_data["user_id"], alert_code, event_request_data["time"])
     return alert_flag, alert_codes
 
 
@@ -179,3 +182,23 @@ def write_user_action(conn, user_id, action_type, amount, timestamp):
         return_id=True
     )
     return new_entry_id
+
+
+def write_alert(conn, user_id, alert_code, timestamp):
+    schema_name = "public"
+    table_name = "alerts"
+    primary_key_column = "alert_id"
+    data_dict = {
+        "user_id": user_id,
+        "alert_code": alert_code,
+        "timestamp": timestamp,
+    }
+    new_alert_id = basic_write_dict(
+        conn,
+        schema_name,
+        table_name,
+        data_dict,
+        primary_key_column=primary_key_column,
+        return_id=True
+    )
+    return new_alert_id
