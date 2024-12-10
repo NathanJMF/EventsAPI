@@ -35,7 +35,7 @@
 4. **Set up the virtual environment using Pipenv**  
     ```
     pipenv shell
-    pipenv sync
+    pipenv update
     ```
 
 5. **Run Alembic migrations to set up the database structure**
